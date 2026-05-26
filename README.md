@@ -57,11 +57,43 @@ Shortcuts live in `<koreader-data>/settings/applauncher_shortcuts.lua` as
 a list of `{ id, label, uri, icon }` records. Safe to edit by hand or
 sync between devices.
 
+## Discovering an app's URL scheme
+
+If you don't know what URI to plug into a shortcut, the most reliable
+way is to ask the installed APK directly. With the device connected via
+ADB:
+
+```bash
+adb shell pm list packages | grep -i <app-name>
+adb shell dumpsys package <package.name> | grep -iE 'scheme|action.VIEW'
+```
+
+Any `scheme=…` line under an `android.intent.action.VIEW` filter is a
+URI prefix the app accepts.
+
+## Tested examples
+
+| App           | Working URI                                |
+|---------------|--------------------------------------------|
+| Default browser | `https://duckduckgo.com/`                |
+| Email client  | `mailto:`                                  |
+| EinkBro       | `einkbros://duckduckgo.com` (requires recent build) |
+| Obsidian      | `obsidian://open`                          |
+
 ## Limitations
 
 - Android only. On other platforms the plugin loads but every launch
   attempt shows a toast.
 - URI-scheme dispatch only. No package-name launch, no arbitrary intents.
-- No way to enumerate installed apps from Lua, so you have to know the
-  scheme of each target app. `adb shell dumpsys package <pkg>` is the
-  easiest way to discover one.
+  See [DESIGN.md](DESIGN.md) for why and what it would take to lift
+  this.
+- No icon picker yet — shortcuts use SimpleUI's default fallback icon.
+- You have to know the scheme of each target app. See "Discovering an
+  app's URL scheme" above.
+
+## Architecture & design decisions
+
+See [DESIGN.md](DESIGN.md) for the reasoning behind the URL-scheme
+approach, why shortcuts register with KOReader's Dispatcher (rather
+than a SimpleUI-private hook), the storage format, and known
+limitations.
