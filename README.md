@@ -32,9 +32,12 @@ On Android the data dir is typically
 `/sdcard/koreader/plugins/applauncher.koplugin/`. Restart KOReader. The
 plugin shows up under **Tools → App Launcher**.
 
-If [SimpleUI](https://github.com/doctorhetfield-cmd/simpleui.koplugin) is
-also installed, each shortcut is auto-registered as a SimpleUI
-QuickAction (homescreen tile) — no manual wiring needed.
+Every shortcut is also registered as a KOReader **Dispatcher** action
+(category: "general"), so it shows up wherever KOReader exposes
+system actions — gestures, profiles, and the SimpleUI QuickAction
+picker if [SimpleUI](https://github.com/doctorhetfield-cmd/simpleui.koplugin)
+is installed. Dispatcher registrations refresh automatically when you
+add, edit, or delete shortcuts.
 
 ## Usage
 

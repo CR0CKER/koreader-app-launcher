@@ -1,5 +1,5 @@
+local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local _ = require("gettext")
 
 local Launcher = require("launcher")
@@ -11,37 +11,44 @@ local AppLauncher = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+local function action_name(id)
+    return "applauncher_" .. tostring(id)
+end
+
 function AppLauncher:init()
     self.shortcuts = Shortcuts.load()
+    self.registered_names = {}
+    self:onDispatcherRegisterActions()
     if self.ui and self.ui.menu then
         self.ui.menu:registerToMainMenu(self)
     end
-    self:registerWithSimpleUI()
+end
+
+function AppLauncher:onDispatcherRegisterActions()
+    for _idx, s in ipairs(self.shortcuts) do
+        local name = action_name(s.id)
+        Dispatcher:registerAction(name, {
+            category = "none",
+            event = "AppLauncherLaunch",
+            arg = s.uri,
+            title = s.label or s.uri,
+            general = true,
+        })
+        self.registered_names[name] = true
+    end
 end
 
 function AppLauncher:refresh()
+    for name in pairs(self.registered_names) do
+        Dispatcher:removeAction(name)
+    end
+    self.registered_names = {}
     self.shortcuts = Shortcuts.load()
-    self:registerWithSimpleUI()
+    self:onDispatcherRegisterActions()
 end
 
-function AppLauncher:registerWithSimpleUI()
-    local ok, QA = pcall(require, "sui_quickactions")
-    if not ok or type(QA) ~= "table" or type(QA.register) ~= "function" then
-        return
-    end
-    for _idx, s in ipairs(self.shortcuts) do
-        local uri = s.uri
-        local descriptor = {
-            id = "applauncher_" .. tostring(s.id),
-            label = s.label,
-            icon = s.icon,
-            execute = function() Launcher.launch(uri) end,
-        }
-        local ok_reg, err = pcall(QA.register, descriptor)
-        if not ok_reg then
-            logger.warn("applauncher: SimpleUI QA.register failed", err)
-        end
-    end
+function AppLauncher:onAppLauncherLaunch(uri)
+    Launcher.launch(uri)
 end
 
 function AppLauncher:buildSubItems()
