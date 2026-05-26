@@ -30,33 +30,69 @@ arbitrary Android app by package name.** The SimpleUI maintainer was
 right about that. What you *can* do is fire an `ACTION_VIEW` at a URI
 and let Android route it.
 
-## URL schemes as the launch primitive
+## URL schemes as the launch primitive (and the Android 11+ catch)
 
-`openLink("foo://bar")` is enough to launch any app that has registered
-an `intent-filter` for that scheme. Most apps a reader would want to
-jump to do register one:
+`openLink("foo://bar")` *should* be enough to launch any app that has
+registered an `intent-filter` for that scheme. In practice, on every
+modern Boox (Android 11+), custom-scheme dispatch from KOReader is
+broken — and the failure is silent. Here's the actual launchability
+matrix on stock KOReader:
 
-- `https://…` (any browser)
-- `mailto:…` (any email client)
-- `obsidian://`, `joplin://`, `simplenote://` (notes apps)
-- `einkbro://`, `einkbros://` (EinkBro browser)
-- `kiwix://`, `aard2://`, `colordict://` (dictionaries / offline wiki)
-- `anki://`, `pocket://`, `calibre://` …
-- Many Boox built-ins respond to `boox://` or HTTPS App Links
+| What the target app declares                                       | Works? |
+|--------------------------------------------------------------------|--------|
+| Verified App Link (`assetlinks.json` on its `https://` domain)     | ✅ Yes |
+| `http`/`https` scheme + user has it set as default browser         | ✅ Yes |
+| Custom URI scheme only (`einkbros://`, `obsidian://`, etc.)        | ❌ No  |
+| Nothing                                                            | ❌ No  |
 
-For apps without a registered scheme, there's no workaround on stock
-KOReader. The plugin tells the user via toast when that happens.
+Two compounding reasons custom schemes fail:
 
-### Discovering an app's schemes
+1. **No `<queries>` element in KOReader's `AndroidManifest.xml`.**
+   Android 11 (API 30) introduced package visibility restrictions: an
+   app cannot resolve activities of other apps unless they're declared
+   in `<queries>` (or matched by a small implicit allowlist). KOReader
+   declares no `<queries>`. Android's allowlist *does* include browser
+   queries (any handler of `http`/`https`), which is exactly why
+   default-browser dispatch works. Custom schemes get no implicit
+   allowance, so the target app is invisible to `startActivity()` and
+   the framework throws `ActivityNotFoundException` — surfaced to the
+   user as our "No app handles `…:`" toast.
+2. **`openLink` is minimal.** The Kotlin is literally
+   `Intent(ACTION_VIEW, Uri.parse(url)); startActivity(intent)` — no
+   `addCategory(BROWSABLE)`, no `setPackage`. Even on pre-11 Android
+   where (1) wouldn't bite, the missing BROWSABLE reduces match
+   reliability against filters that declare it.
+
+Both are KOReader/APK-level issues; no Lua workaround exists. A future
+patch to `android-luajit-launcher` could add `<queries>` for common
+schemes plus `intent.addCategory(BROWSABLE)`, but that's a custom-APK
+path.
+
+### Checking if a given app is launchable (30 seconds, no ADB)
 
 ```bash
-adb shell dumpsys package <package.name> | grep -iE 'scheme|action.VIEW'
+curl -fsSL https://<app-domain>/.well-known/assetlinks.json
 ```
 
-Look under any `android.intent.action.VIEW` filter; the `scheme=…`
-lines are URIs the app handles. If an app advertises `autoVerify="true"`
-on an `https://example.com` host, that App Link will also bypass the
-default-browser chooser and open the target app directly.
+If you see a JSON array with a `delegate_permission/common.handle_all_urls`
+entry, the app publishes a verified App Link — you can launch it with
+`https://<app-domain>/` regardless of default-browser setting. Examples
+confirmed during development:
+
+- **Readwise Reader** → `read.readwise.io` publishes assetlinks for
+  package `com.readermobile`. Shortcut `https://read.readwise.io/`
+  works directly.
+- **EinkBro** → no assetlinks. Only launchable by setting it as the
+  default browser and using `https://…` URIs.
+
+### Tab reuse (EinkBro-specific, but informative)
+
+EinkBro's `ACTION_VIEW` handler calls `getUrlMatchedBrowser(url)` and
+reuses an existing tab if the URL matches. So repeated launches of the
+same shortcut URL don't proliferate tabs — *unless* the user has
+navigated away in that tab, in which case the match fails and a fresh
+tab opens. Practical advice: use a sentinel start-page URL you won't
+navigate away from.
 
 ## Exposing shortcuts to SimpleUI: Dispatcher, not a custom API
 
@@ -141,6 +177,29 @@ For posterity, the order this got figured out in:
    shortcut. Shortcuts then appeared in SimpleUI's QuickAction picker,
    the Gesture manager, and Profiles.
 
+## Icon rendering: NanoSVG quirks
+
+KOReader uses NanoSVG to render SVGs, which only understands a subset
+of the spec. The two gotchas hit during development:
+
+- **No `<style>` block support.** NanoSVG ignores CSS-style class
+  rules, so any element relying on `class="…"` to get its stroke/fill
+  renders with the SVG default (`fill: black, stroke: none`). For
+  outlined/stroke-based icon sets like Arcticons, this means every
+  icon collapses to a solid silhouette or — when the icon is just
+  strokes — a single filled blob (the circular frame becomes a black
+  dot, the rest disappears). Fix: pre-process the SVG to flatten
+  `<style>` rules into inline `style="…"` attributes per element. See
+  `scripts/flatten_arcticons.py`; works on the entire ~14k-icon
+  Arcticons set, and the same approach generalises to other
+  CSS-styled icon packs.
+- **Stroke widths don't auto-scale.** Arcticons strokes default to
+  `1` on a 48×48 viewBox, which reads too thin next to KOReader's
+  built-in UI icons (which feel closer to `2`). For shortcuts where
+  the visual weight matters, append `stroke-width:2` to each element's
+  inline style. One sed/Edit pass per icon. 1.5 reads "elegant", 2
+  reads "matches KOReader", 2.5 reads "bold."
+
 ## Known limitations
 
 - **Icon picker added.** Each shortcut now carries an optional `icon`
@@ -157,8 +216,16 @@ For posterity, the order this got figured out in:
   hard limit of stock KOReader; would require a Kotlin patch to
   `android-luajit-launcher` (`packageManager.getLaunchIntentForPackage`)
   and a rebuilt APK.
+- **Custom URI schemes don't work on Android 11+** for the reasons in
+  the "URL schemes" section above. Use App Links or
+  default-browser-routed `https://…` instead.
 - **No enumeration of installed apps from Lua.** You have to know the
-  target app's scheme. ADB `dumpsys package` is the easiest discovery.
+  target app's launchable URL. The assetlinks.json curl check is the
+  fastest way to decide whether a given app is reachable.
+- **No way to launch an app "bare" (no URL).** `ACTION_MAIN +
+  CATEGORY_LAUNCHER` isn't exposed; every launch must carry a URL.
+  For tab-based apps like EinkBro this means at least one tab is
+  always touched on launch.
 - **Boox-specific deep links** vary between Boox firmware versions;
   what works on a Poke 3 may not work on a Note Air or Page.
 

@@ -62,41 +62,66 @@ Shortcuts live in `<koreader-data>/settings/applauncher_shortcuts.lua` as
 a list of `{ id, label, uri, icon }` records. Safe to edit by hand or
 sync between devices.
 
-## Discovering an app's URL scheme
+## Will my app launch? (no ADB, 30 seconds)
 
-If you don't know what URI to plug into a shortcut, the most reliable
-way is to ask the installed APK directly. With the device connected via
-ADB:
+On Android 11+ (every modern Boox), the only reliable launch paths
+are:
 
-```bash
-adb shell pm list packages | grep -i <app-name>
-adb shell dumpsys package <package.name> | grep -iE 'scheme|action.VIEW'
-```
+1. The target app publishes a verified App Link on its `https://`
+   domain. Check via:
+   ```bash
+   curl -fsSL https://<app-domain>/.well-known/assetlinks.json
+   ```
+   A JSON array with `delegate_permission/common.handle_all_urls`
+   means yes — use `https://<app-domain>/` as the shortcut.
+2. The target app is the user's **default browser**, in which case
+   any `https://…` URL routes to it.
 
-Any `scheme=…` line under an `android.intent.action.VIEW` filter is a
-URI prefix the app accepts.
+Custom URI schemes like `obsidian://`, `einkbros://` are *not*
+reliably launchable from stock KOReader on Android 11+ due to package
+visibility restrictions. See [DESIGN.md](DESIGN.md) for the gory
+details.
 
 ## Tested examples
 
-| App           | Working URI                                |
-|---------------|--------------------------------------------|
-| Default browser | `https://duckduckgo.com/`                |
-| Email client  | `mailto:`                                  |
-| EinkBro       | `einkbros://duckduckgo.com` (requires recent build) |
-| Obsidian      | `obsidian://open`                          |
+| App                | Working URI                                  | Why                      |
+|--------------------|----------------------------------------------|--------------------------|
+| Default browser    | `https://duckduckgo.com/`                    | http/https implicit allowance |
+| Email client       | `mailto:`                                    | mailto allowance         |
+| Readwise Reader    | `https://read.readwise.io/`                  | Verified App Link        |
+| EinkBro (browser)  | `https://start.duckduckgo.com/`              | Only if default browser  |
+
+## Icons
+
+The picker browses any SVG/PNG/JPG on the device. It opens, in order,
+to the first existing directory among:
+
+- `/sdcard/icons/arcticons-black`, `…-white`, `arcticons`, `/sdcard/icons`
+- SimpleUI's icon dirs (`<settings>/simpleui/sui_icons`, etc.)
+- KOReader's data dir
+
+To use Arcticons, grab the SVG sources from
+[github.com/Donnnno/Arcticons](https://github.com/Donnnno/Arcticons)
+(`icons/black/` is ~14k SVGs / 230 MB raw), run them through
+`scripts/flatten_arcticons.py` to make them NanoSVG-compatible (drops
+to ~60 MB), then push to `/sdcard/icons/arcticons-black/`.
+
+If a chosen icon renders too thin, edit its `style="…"` attributes to
+add `stroke-width:2;` — KOReader's built-in icons sit around that
+weight on a 48×48 viewBox.
 
 ## Limitations
 
 - Android only. On other platforms the plugin loads but every launch
   attempt shows a toast.
-- URI-scheme dispatch only. No package-name launch, no arbitrary intents.
-  See [DESIGN.md](DESIGN.md) for why and what it would take to lift
-  this.
+- Custom URI schemes don't work on Android 11+. Use App Links or
+  default-browser routing instead — see "Will my app launch?" above.
+- No package-name launch, no arbitrary intents, no "bare" app launch
+  without a URL. See [DESIGN.md](DESIGN.md) for the underlying
+  KOReader/JNI limits.
 - Icons depend on SimpleUI exposing `QA.setDefaultActionIcon`. On
   SimpleUI builds that predate this API, the icon you pick still
   appears in App Launcher's own menu but not on SimpleUI tiles.
-- You have to know the scheme of each target app. See "Discovering an
-  app's URL scheme" above.
 
 ## Architecture & design decisions
 
