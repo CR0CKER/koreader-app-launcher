@@ -24,6 +24,10 @@ end
 
 local function pick_start_dir()
     local candidates = {
+        "/sdcard/icons/arcticons-black",
+        "/sdcard/icons/arcticons-white",
+        "/sdcard/icons/arcticons",
+        "/sdcard/icons",
         DataStorage:getSettingsDir() .. "/simpleui/sui_icons",
         DataStorage:getSettingsDir() .. "/simpleui",
         DataStorage:getDataDir() .. "/plugins/simpleui.koplugin/icons/custom",
