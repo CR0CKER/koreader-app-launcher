@@ -47,6 +47,11 @@ add, edit, or delete shortcuts.
   (whatever scheme the target app handles).
 - The editor's **Test** button immediately launches the URI so you can
   verify it before saving.
+- Tap a row to open its menu — **Set icon…** lets you browse to any
+  SVG / PNG / JPG on the device. The picker starts in SimpleUI's icon
+  directory if it exists. The icon shows up in App Launcher's own menu
+  and is pushed to SimpleUI (via `QA.setDefaultActionIcon`) so the
+  matching QuickAction tile uses it automatically.
 
 If no installed app handles a URI, KOReader shows a toast
 ("No app handles `scheme:`") instead of crashing.
@@ -87,7 +92,9 @@ URI prefix the app accepts.
 - URI-scheme dispatch only. No package-name launch, no arbitrary intents.
   See [DESIGN.md](DESIGN.md) for why and what it would take to lift
   this.
-- No icon picker yet — shortcuts use SimpleUI's default fallback icon.
+- Icons depend on SimpleUI exposing `QA.setDefaultActionIcon`. On
+  SimpleUI builds that predate this API, the icon you pick still
+  appears in App Launcher's own menu but not on SimpleUI tiles.
 - You have to know the scheme of each target app. See "Discovering an
   app's URL scheme" above.
 

@@ -39,13 +39,21 @@ local function next_id(list)
 end
 
 function Shortcuts.add(list, label, uri, icon)
+    local id = next_id(list)
     table.insert(list, {
-        id = next_id(list),
+        id = id,
         label = label,
         uri = uri,
         icon = icon,
     })
     Shortcuts.save(list)
+    return id
+end
+
+function Shortcuts.get(list, id)
+    for _, s in ipairs(list) do
+        if s.id == id then return s end
+    end
 end
 
 function Shortcuts.update(list, id, fields)

@@ -143,11 +143,16 @@ For posterity, the order this got figured out in:
 
 ## Known limitations
 
-- **No icon picker.** SimpleUI uses `descriptor.icon` for the tile
-  graphic and falls back to a generic icon when nil. The plugin
-  currently leaves icon nil for every shortcut. A future enhancement
-  would add an icon field to the edit dialog plus a file browser into
-  the SimpleUI / KOReader icon directories.
+- **Icon picker added.** Each shortcut now carries an optional `icon`
+  path. Picking an icon uses KOReader's `PathChooser`, started in
+  SimpleUI's icon directory when available. The icon is consumed in two
+  places: the App Launcher submenu (`menu_items.icon`) and SimpleUI's
+  per-action override (`QA.setDefaultActionIcon(action_id, path)`,
+  which persists under SUISettings key `simpleui_action_<id>_icon`).
+  This avoids the duplicate-entry problem you get if you also register
+  the same shortcut via SimpleUI's `QA.register` — Dispatcher stays the
+  single source of truth; SimpleUI just gets a hint about which icon
+  to use for our action ids.
 - **No way to launch apps without a registered URL scheme.** This is a
   hard limit of stock KOReader; would require a Kotlin patch to
   `android-luajit-launcher` (`packageManager.getLaunchIntentForPackage`)
