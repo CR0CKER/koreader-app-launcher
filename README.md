@@ -10,6 +10,12 @@ Built for Android e-readers (Boox, Onyx, Likebook, etc.) where switching
 between a book and a notes app, browser, dictionary, or email client
 would otherwise mean exiting to the launcher.
 
+![SimpleUI QuickAction strip with two App Launcher shortcuts (globe = browser, R = Readwise Reader) alongside SimpleUI's built-in library and home tiles](docs/quickactions.png)
+
+*Two App Launcher shortcuts (rightmost: a browser, and Readwise Reader)
+shown on a SimpleUI QuickAction strip next to SimpleUI's built-in
+library and home tiles.*
+
 ## Features
 
 - Add, edit, reorder, and delete launch shortcuts from inside KOReader.
