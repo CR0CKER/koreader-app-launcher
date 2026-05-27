@@ -1,6 +1,5 @@
 local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local _ = require("gettext")
 
 local Launcher = require("launcher")
@@ -16,16 +15,10 @@ local function action_name(id)
     return "applauncher_" .. tostring(id)
 end
 
-local function simpleui_qa()
-    local ok, mod = pcall(require, "sui_quickactions")
-    if ok and type(mod) == "table" then return mod end
-end
-
 function AppLauncher:init()
     self.shortcuts = Shortcuts.load()
     self.registered_names = {}
     self:onDispatcherRegisterActions()
-    self:syncSimpleUIIcons()
     if self.ui and self.ui.menu then
         self.ui.menu:registerToMainMenu(self)
     end
@@ -45,17 +38,6 @@ function AppLauncher:onDispatcherRegisterActions()
     end
 end
 
-function AppLauncher:syncSimpleUIIcons()
-    local QA = simpleui_qa()
-    if not QA or type(QA.setDefaultActionIcon) ~= "function" then return end
-    for _idx, s in ipairs(self.shortcuts) do
-        local ok, err = pcall(QA.setDefaultActionIcon, action_name(s.id), s.icon)
-        if not ok then
-            logger.warn("applauncher: setDefaultActionIcon failed", err)
-        end
-    end
-end
-
 function AppLauncher:refresh()
     for name in pairs(self.registered_names) do
         Dispatcher:removeAction(name)
@@ -63,7 +45,6 @@ function AppLauncher:refresh()
     self.registered_names = {}
     self.shortcuts = Shortcuts.load()
     self:onDispatcherRegisterActions()
-    self:syncSimpleUIIcons()
 end
 
 function AppLauncher:onAppLauncherLaunch(uri)
@@ -76,7 +57,6 @@ function AppLauncher:buildSubItems()
         local uri = s.uri
         table.insert(items, {
             text = s.label or "?",
-            icon = s.icon,
             keep_menu_open = false,
             callback = function() Launcher.launch(uri) end,
         })

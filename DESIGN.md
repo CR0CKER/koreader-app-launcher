@@ -202,16 +202,17 @@ of the spec. The two gotchas hit during development:
 
 ## Known limitations
 
-- **Icon picker added.** Each shortcut now carries an optional `icon`
-  path. Picking an icon uses KOReader's `PathChooser`, started in
-  SimpleUI's icon directory when available. The icon is consumed in two
-  places: the App Launcher submenu (`menu_items.icon`) and SimpleUI's
-  per-action override (`QA.setDefaultActionIcon(action_id, path)`,
-  which persists under SUISettings key `simpleui_action_<id>_icon`).
-  This avoids the duplicate-entry problem you get if you also register
-  the same shortcut via SimpleUI's `QA.register` — Dispatcher stays the
-  single source of truth; SimpleUI just gets a hint about which icon
-  to use for our action ids.
+- **No per-shortcut icon.** A picker existed briefly and was removed:
+  SimpleUI exposes our shortcuts through Dispatcher and wraps each one
+  in a Custom QA (`simpleui_cqa_<n>`). `QA.getEntry()` resolves
+  Custom QAs from their own `cfg.icon` and never consults
+  `QA.getDefaultActionIcon`, so pushing icons via
+  `QA.setDefaultActionIcon("applauncher_<id>", path)` was a silent
+  no-op on the SimpleUI tiles — which is the surface anyone actually
+  cared about. SimpleUI's QuickAction editor already has an icon
+  picker; use that. (If a future change moves us off the
+  custom-QA-wrapping path — e.g. registering directly through
+  `QA.register` — the default-icon override would start applying again.)
 - **No way to launch apps without a registered URL scheme.** This is a
   hard limit of stock KOReader; would require a Kotlin patch to
   `android-luajit-launcher` (`packageManager.getLaunchIntentForPackage`)

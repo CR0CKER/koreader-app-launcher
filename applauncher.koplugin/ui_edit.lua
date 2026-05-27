@@ -1,13 +1,10 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
-local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local PathChooser = require("ui/widget/pathchooser")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 
 local Launcher = require("launcher")
@@ -15,35 +12,8 @@ local Shortcuts = require("shortcuts")
 
 local Editor = {}
 
-local function is_image_path(path)
-    if not path then return false end
-    local lower = path:lower()
-    return lower:match("%.svg$") or lower:match("%.png$")
-        or lower:match("%.jpg$") or lower:match("%.jpeg$")
-end
-
-local function pick_start_dir()
-    local candidates = {
-        "/sdcard/icons/arcticons-black",
-        "/sdcard/icons/arcticons-white",
-        "/sdcard/icons/arcticons",
-        "/sdcard/icons",
-        DataStorage:getSettingsDir() .. "/simpleui/sui_icons",
-        DataStorage:getSettingsDir() .. "/simpleui",
-        DataStorage:getDataDir() .. "/plugins/simpleui.koplugin/icons/custom",
-        DataStorage:getDataDir() .. "/plugins/simpleui.koplugin/icons",
-        DataStorage:getDataDir(),
-    }
-    for _, p in ipairs(candidates) do
-        local attr = lfs.attributes(p)
-        if attr and attr.mode == "directory" then return p end
-    end
-    return nil
-end
-
 local function row_text(s)
-    local icon_marker = (s.icon and s.icon ~= "") and " \u{1F5BC} " or "    "
-    return string.format("%s%s  \u{2192}  %s", icon_marker, s.label or "?", s.uri or "")
+    return string.format("%s  \u{2192}  %s", s.label or "?", s.uri or "")
 end
 
 local function build_items(plugin, on_change)
@@ -97,17 +67,6 @@ function Editor.openRowMenu(plugin, idx, on_change)
                 end },
             },
             {
-                { text = _("Set icon\u{2026}"), callback = function()
-                    UIManager:close(dialog)
-                    Editor.pickIcon(plugin, s.id, on_change)
-                end },
-                { text = _("Clear icon"), enabled = s.icon ~= nil and s.icon ~= "", callback = function()
-                    UIManager:close(dialog)
-                    Shortcuts.update(plugin.shortcuts, s.id, { icon = nil })
-                    on_change()
-                end },
-            },
-            {
                 { text = _("Move up"), enabled = idx > 1, callback = function()
                     UIManager:close(dialog)
                     Shortcuts.move(plugin.shortcuts, s.id, -1)
@@ -135,29 +94,6 @@ function Editor.openRowMenu(plugin, idx, on_change)
         },
     }
     UIManager:show(dialog)
-end
-
-function Editor.pickIcon(plugin, id, on_change)
-    local start = pick_start_dir()
-    local chooser
-    chooser = PathChooser:new{
-        title = _("Select icon (SVG / PNG / JPG)"),
-        select_directory = false,
-        select_file = true,
-        path = start,
-        file_filter = function(path) return is_image_path(path) end,
-        onConfirm = function(path)
-            if not is_image_path(path) then
-                UIManager:show(InfoMessage:new{
-                    text = _("That file isn't an SVG / PNG / JPG."),
-                })
-                return
-            end
-            Shortcuts.update(plugin.shortcuts, id, { icon = path })
-            on_change()
-        end,
-    }
-    UIManager:show(chooser)
 end
 
 function Editor.openEditDialog(plugin, idx, on_change)
@@ -200,7 +136,7 @@ function Editor.openEditDialog(plugin, idx, on_change)
                         Shortcuts.update(plugin.shortcuts, existing.id,
                             { label = label, uri = uri })
                     else
-                        Shortcuts.add(plugin.shortcuts, label, uri, nil)
+                        Shortcuts.add(plugin.shortcuts, label, uri)
                     end
                     UIManager:close(dialog)
                     on_change()

@@ -38,13 +38,12 @@ local function next_id(list)
     return tostring(max + 1)
 end
 
-function Shortcuts.add(list, label, uri, icon)
+function Shortcuts.add(list, label, uri)
     local id = next_id(list)
     table.insert(list, {
         id = id,
         label = label,
         uri = uri,
-        icon = icon,
     })
     Shortcuts.save(list)
     return id

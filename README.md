@@ -47,19 +47,19 @@ add, edit, or delete shortcuts.
   (whatever scheme the target app handles).
 - The editor's **Test** button immediately launches the URI so you can
   verify it before saving.
-- Tap a row to open its menu — **Set icon…** lets you browse to any
-  SVG / PNG / JPG on the device. The picker starts in SimpleUI's icon
-  directory if it exists. The icon shows up in App Launcher's own menu
-  and is pushed to SimpleUI (via `QA.setDefaultActionIcon`) so the
-  matching QuickAction tile uses it automatically.
 
 If no installed app handles a URI, KOReader shows a toast
 ("No app handles `scheme:`") instead of crashing.
 
+Icons are intentionally not part of this plugin. When the shortcut is
+surfaced on a SimpleUI tile, set the icon there — SimpleUI's
+QuickAction editor stores a per-tile icon that overrides everything
+else, so any default we tried to push from here would be ignored.
+
 ## Storage
 
 Shortcuts live in `<koreader-data>/settings/applauncher_shortcuts.lua` as
-a list of `{ id, label, uri, icon }` records. Safe to edit by hand or
+a list of `{ id, label, uri }` records. Safe to edit by hand or
 sync between devices.
 
 ## Will my app launch? (no ADB, 30 seconds)
@@ -91,20 +91,15 @@ details.
 | Readwise Reader    | `https://read.readwise.io/`                  | Verified App Link        |
 | EinkBro (browser)  | `https://start.duckduckgo.com/`              | Only if default browser  |
 
-## Icons
+## Icons (for SimpleUI tiles)
 
-The picker browses any SVG/PNG/JPG on the device. It opens, in order,
-to the first existing directory among:
-
-- `/sdcard/icons/arcticons-black`, `…-white`, `arcticons`, `/sdcard/icons`
-- SimpleUI's icon dirs (`<settings>/simpleui/sui_icons`, etc.)
-- KOReader's data dir
-
-To use Arcticons, grab the SVG sources from
+Set icons in SimpleUI's QuickAction editor, not here. For SVG sources,
+Arcticons works well — grab them from
 [github.com/Donnnno/Arcticons](https://github.com/Donnnno/Arcticons)
 (`icons/black/` is ~14k SVGs / 230 MB raw), run them through
 `scripts/flatten_arcticons.py` to make them NanoSVG-compatible (drops
-to ~60 MB), then push to `/sdcard/icons/arcticons-black/`.
+to ~60 MB), then push to `/sdcard/icons/arcticons-black/` and point
+SimpleUI's icon picker at them.
 
 If a chosen icon renders too thin, edit its `style="…"` attributes to
 add `stroke-width:2;` — KOReader's built-in icons sit around that
@@ -119,9 +114,6 @@ weight on a 48×48 viewBox.
 - No package-name launch, no arbitrary intents, no "bare" app launch
   without a URL. See [DESIGN.md](DESIGN.md) for the underlying
   KOReader/JNI limits.
-- Icons depend on SimpleUI exposing `QA.setDefaultActionIcon`. On
-  SimpleUI builds that predate this API, the icon you pick still
-  appears in App Launcher's own menu but not on SimpleUI tiles.
 
 ## Architecture & design decisions
 
