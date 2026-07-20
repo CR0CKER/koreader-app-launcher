@@ -34,7 +34,7 @@ first:
 
 - **Lua:** `luacheck applauncher.koplugin/` (config in `.luacheckrc`).
 - **Python (`scripts/`):** `ruff check scripts/`, `ruff format --check
-  scripts/`, and `mypy` — tool versions pinned in
+  scripts/`, `mypy`, and `pytest` — tool versions pinned in
   `requirements-dev.txt` (`pip install -r requirements-dev.txt`).
 
 ## Scope
