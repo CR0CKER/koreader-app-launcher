@@ -1,0 +1,17 @@
+# Tool configuration for the repo's Python helper (scripts/).
+# This project ships no installable Python package — scripts/flatten_arcticons.py
+# is a standalone, stdlib-only single-file tool. This file exists to pin the
+# lint/type-check gate configuration used by CI and locally.
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# A pragmatic, security-and-correctness-focused rule set for a small CLI tool.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "PTH", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["scripts"]

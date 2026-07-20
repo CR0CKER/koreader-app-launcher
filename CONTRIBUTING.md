@@ -21,10 +21,21 @@ Please include:
 - Match the existing Lua style (two-space indent, `local`-first,
   `pcall` around anything that can fail at the KOReader/device
   boundary).
-- For UI changes, describe the manual test you ran on-device — there
-  are no automated tests for this plugin.
+- For UI changes, describe the manual test you ran on-device — plugin
+  behavior has no automated tests yet, so on-device testing is how the
+  Lua side is verified.
 - Update [DESIGN.md](DESIGN.md) when a change shifts an architectural
   decision (e.g. "we now register via X instead of Y, because Z").
+
+## Local checks
+
+CI (`.github/workflows/ci.yml`) runs these on every PR; run them locally
+first:
+
+- **Lua:** `luacheck applauncher.koplugin/` (config in `.luacheckrc`).
+- **Python (`scripts/`):** `ruff check scripts/`, `ruff format --check
+  scripts/`, and `mypy` — tool versions pinned in
+  `requirements-dev.txt` (`pip install -r requirements-dev.txt`).
 
 ## Scope
 

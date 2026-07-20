@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # CI tooling pinned in requirements-dev.txt (ruff, mypy).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # SHA-pinned GitHub Actions in .github/workflows/.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
