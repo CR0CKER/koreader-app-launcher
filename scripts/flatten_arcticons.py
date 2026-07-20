@@ -112,16 +112,26 @@ def main(argv: list[str]) -> int:
 
     converted = 0
     skipped = 0
+    failed = 0
     for path in sorted(src.glob("*.svg")):
-        text = path.read_text(encoding="utf-8")
-        flat = flatten(text)
-        (dst / path.name).write_text(flat, encoding="utf-8")
+        # Fail open per file: one unreadable/unwritable SVG (e.g. non-UTF-8)
+        # must not abort the batch and leave later files unprocessed.
+        try:
+            text = path.read_text(encoding="utf-8")
+            flat = flatten(text)
+            (dst / path.name).write_text(flat, encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            failed += 1
+            print(f"  skipped {path.name}: {exc}", file=sys.stderr)
+            continue
         if flat == text:
             skipped += 1
         else:
             converted += 1
-    print(f"Flattened {converted} SVGs, {skipped} unchanged, output in {dst}")
-    return 0
+    print(f"Flattened {converted} SVGs, {skipped} unchanged, {failed} failed, output in {dst}")
+    # Non-zero when any file failed, so an automation caller notices the
+    # partial run rather than treating it as a clean success.
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

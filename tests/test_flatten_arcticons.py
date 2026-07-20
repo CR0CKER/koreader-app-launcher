@@ -12,6 +12,8 @@ over ``Path.glob``/``read_text``/``write_text``).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import flatten_arcticons as fa
 
 # ---------------------------------------------------------------------------
@@ -127,3 +129,46 @@ def test_self_closing_and_open_tag_forms_both_flatten() -> None:
     out = fa.flatten(open_form)
     assert '<g style="fill:red;">' in out
     assert "</g>" in out
+
+
+# ---------------------------------------------------------------------------
+# main (filesystem driver) -- resilience
+# ---------------------------------------------------------------------------
+
+
+def test_one_unreadable_file_is_skipped_without_aborting_the_batch(
+    tmp_path: Path,
+) -> None:
+    # Regression for audit L4: a single non-UTF-8 (or otherwise unreadable)
+    # SVG must not kill the whole run and leave later files unprocessed.
+    src = tmp_path / "in"
+    dst = tmp_path / "out"
+    src.mkdir()
+    # Sorted glob visits "01-bad" before "02-good"; if the bad file aborts the
+    # loop, the good file never gets written -- which is exactly what we assert
+    # against.
+    (src / "01-bad.svg").write_bytes(b"\xff\xfe not valid utf-8")
+    (src / "02-good.svg").write_text(
+        '<svg><defs><style>.a{fill:red}</style></defs><path class="a"/></svg>',
+        encoding="utf-8",
+    )
+
+    rc = fa.main(["flatten_arcticons.py", str(src), str(dst)])
+
+    # Non-zero so an automation caller notices the partial failure...
+    assert rc == 1
+    # ...but the good file after the bad one was still converted.
+    good_out = dst / "02-good.svg"
+    assert good_out.exists()
+    assert 'style="fill:red;"' in good_out.read_text(encoding="utf-8")
+    # The bad file is skipped, not written as garbage.
+    assert not (dst / "01-bad.svg").exists()
+
+
+def test_all_good_files_return_zero(tmp_path: Path) -> None:
+    src = tmp_path / "in"
+    dst = tmp_path / "out"
+    src.mkdir()
+    (src / "a.svg").write_text("<svg><path/></svg>", encoding="utf-8")
+
+    assert fa.main(["flatten_arcticons.py", str(src), str(dst)]) == 0
