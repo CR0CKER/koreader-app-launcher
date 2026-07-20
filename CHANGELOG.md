@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Test suite for the pure transforms in `scripts/flatten_arcticons.py`
+  (`parse_css`, `flatten`), run by a `pytest` CI job. (audit M2)
 - Continuous integration (`.github/workflows/ci.yml`): ruff lint + format
   check and `mypy --strict` on `scripts/`, and luacheck on the plugin —
   run from a digest-pinned image. (audit M1)

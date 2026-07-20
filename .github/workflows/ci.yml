@@ -26,6 +26,8 @@ jobs:
         run: ruff format --check scripts/
       - name: Type check (mypy --strict)
         run: mypy
+      - name: Tests (pytest)
+        run: pytest
 
   lua:
     name: Lua (luacheck)
