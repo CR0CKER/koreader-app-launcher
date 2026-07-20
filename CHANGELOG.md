@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `scripts/flatten_arcticons.py`: annotate `re.Match[str]` so the tool
   passes `mypy --strict`. (audit L3)
+- `scripts/flatten_arcticons.py`: a single unreadable/non-UTF-8 SVG no
+  longer aborts the whole run — it is skipped with a stderr note and
+  counted, and the run exits non-zero if any file failed. (audit L4)
 
 ### Changed
 
