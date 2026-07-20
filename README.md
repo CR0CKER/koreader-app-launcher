@@ -1,8 +1,9 @@
 # koreader-app-launcher
 
-Last updated: 2026-07-20 10:42 AM CDT
+Last updated: 2026-07-20 11:07 AM CDT
 
 [![CI](https://github.com/CR0CKER/koreader-app-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/CR0CKER/koreader-app-launcher/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/CR0CKER/koreader-app-launcher)](https://github.com/CR0CKER/koreader-app-launcher/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/platform-Android-green.svg)](#requirements)
 [![KOReader plugin](https://img.shields.io/badge/KOReader-plugin-blue.svg)](https://github.com/koreader/koreader)

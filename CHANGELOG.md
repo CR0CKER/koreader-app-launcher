@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-20
+
 ### Added
 
 - Test suite for the pure transforms in `scripts/flatten_arcticons.py`
@@ -52,4 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DESIGN.md` documenting the URL-scheme approach, Dispatcher
   integration, NanoSVG quirks, and Android package-visibility limits.
 
+[Unreleased]: https://github.com/CR0CKER/koreader-app-launcher/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/CR0CKER/koreader-app-launcher/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CR0CKER/koreader-app-launcher/releases/tag/v0.1.0
