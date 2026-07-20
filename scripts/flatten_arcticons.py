@@ -22,6 +22,7 @@ handled. Arcticons uses nothing more complex than that.
 
 Usage: flatten_arcticons.py <input-dir> <output-dir>
 """
+
 from __future__ import annotations
 
 import re
@@ -61,11 +62,11 @@ def flatten(svg_text: str) -> str:
         return svg_text
 
     tag_re = re.compile(
-        r'<(?P<name>[A-Za-z][\w-]*)\b(?P<attrs>[^>]*?)(?P<slash>\s*/?)>',
+        r"<(?P<name>[A-Za-z][\w-]*)\b(?P<attrs>[^>]*?)(?P<slash>\s*/?)>",
         flags=re.DOTALL,
     )
 
-    def rewrite_tag(match: re.Match) -> str:
+    def rewrite_tag(match: re.Match[str]) -> str:
         name = match.group("name")
         attrs = match.group("attrs")
         slash = match.group("slash")
@@ -78,7 +79,7 @@ def flatten(svg_text: str) -> str:
             return match.group(0)
 
         # Drop class=
-        new_attrs = attrs[:class_match.start()] + attrs[class_match.end():]
+        new_attrs = attrs[: class_match.start()] + attrs[class_match.end() :]
         # Merge into existing style= if present, else append a new one.
         style_match = re.search(r'\s+style\s*=\s*"([^"]*)"', new_attrs)
         if style_match:
@@ -86,9 +87,11 @@ def flatten(svg_text: str) -> str:
             if existing and not existing.endswith(";"):
                 existing += ";"
             merged = existing + applied
-            new_attrs = new_attrs[:style_match.start()] \
-                + f' style="{merged}"' \
-                + new_attrs[style_match.end():]
+            new_attrs = (
+                new_attrs[: style_match.start()]
+                + f' style="{merged}"'
+                + new_attrs[style_match.end() :]
+            )
         else:
             new_attrs = new_attrs.rstrip() + f' style="{applied}"'
         return f"<{name}{new_attrs}{slash}>"
